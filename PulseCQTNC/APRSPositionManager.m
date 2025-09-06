@@ -394,20 +394,28 @@
 
 - (void)notificationWriteAPRSPosition:(NSNotification *)notification {
     NSString *m = [NSString stringWithFormat: @"%@\r\n", [[notification userInfo] objectForKey: @"aprsmessage"]];
-    LoggerApp(0, @"TESTING0> aprs_message: %@", m);
+    NSString *packet_type = [[notification userInfo] objectForKey: @"packet_type"];
+    LoggerApp(0, @"TESTING0> aprs_message: %@ packet_type: %@", m, packet_type);
     
-    if ([self.tcp_manager.inSocket isConnected]) {
-        // enqueue to pending array
-        [self.messagesPendingArray addObject: m];
-        
-        [self writeMessages];
+    // Only check network connectivity for TCP/IP mode
+    if ([packet_type isEqualToString: @"tcpip"]) {
+        if ([self.tcp_manager.inSocket isConnected]) {
+            // enqueue to pending array
+            [self.messagesPendingArray addObject: m];
+            
+            [self writeMessages];
+        } else {
+            // Don't enqueue if socket is not connected for network mode
+            [RMessage showNotificationWithTitle: @"APRS-IS not connected"
+                                       subtitle: @"Position not sent via network. Switch to RF mode for offline operation."
+                                           type: RMessageTypeError
+                                 customTypeName:nil
+                                       callback:nil];
+        }
     } else {
-        // Don't enqueue if socket is not connected
-        [RMessage showNotificationWithTitle: @"APRS-IS not connected"
-                                   subtitle: @"Position not sent"
-                                       type: RMessageTypeError
-                             customTypeName:nil
-                                   callback:nil];
+        // For RF mode or other modes, don't require network connectivity
+        // Just log that we received the message
+        LoggerApp(0, @"APRSPositionManager> Received position for non-network mode: %@", packet_type);
     }
 }
 

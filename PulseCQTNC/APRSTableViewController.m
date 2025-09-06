@@ -54,10 +54,18 @@
     
     [self.position_manager addObserver:self forKeyPath:@"connected" options:NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld context:NULL];
     
-    // trigger connect if there's need to autostart
+    // trigger connect if there's need to autostart and we're in network mode
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey: NSUSERDEFAULTS_APRSIS_AUTOCONNECT]) {
-        [self connectAction: nil];
+        // Check if user prefers offline mode or has set RF mode
+        BOOL prefer_offline = [[NSUserDefaults standardUserDefaults] boolForKey: NSUSERDEFAULTS_PREFER_OFFLINE_MODE];
+        NSString *transmit_mode = [[NSUserDefaults standardUserDefaults] objectForKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
+        
+        if (prefer_offline || [transmit_mode isEqualToString: @"rf"]) {
+            LoggerApp(0, @"APRSTableViewController> Auto-connect skipped: RF/offline mode enabled");
+        } else {
+            [self connectAction: nil];
+        }
     }
 }
 
@@ -78,11 +86,17 @@
 
 - (NSAttributedString *)titleForEmptyDataSet:(UIScrollView *)scrollView {
     NSString *text;
+    BOOL prefer_offline = [[NSUserDefaults standardUserDefaults] boolForKey: NSUSERDEFAULTS_PREFER_OFFLINE_MODE];
+    NSString *transmit_mode = [[NSUserDefaults standardUserDefaults] objectForKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
 
     if ([self.position_manager connected]) {
         text = @"Waiting for APRS positions";
     } else {
-        text = @"Not connected to APRS-IS Network";
+        if (prefer_offline || [transmit_mode isEqualToString: @"rf"]) {
+            text = @"RF Mode - Ready for offline operation";
+        } else {
+            text = @"Not connected to APRS-IS Network";
+        }
     }
 
     NSDictionary *attributes = @{NSFontAttributeName: [UIFont boldSystemFontOfSize:18.0f],
@@ -93,11 +107,17 @@
 
 - (NSAttributedString *)descriptionForEmptyDataSet:(UIScrollView *)scrollView {
     NSString *text;
+    BOOL prefer_offline = [[NSUserDefaults standardUserDefaults] boolForKey: NSUSERDEFAULTS_PREFER_OFFLINE_MODE];
+    NSString *transmit_mode = [[NSUserDefaults standardUserDefaults] objectForKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
 
     if ([self.position_manager connected]) {
         text = @"APRS-IS feed and RF positions will be shown";
     } else {
-        text = @"Click 'Connected' if you have entered Callsign and APRS Passcode";
+        if (prefer_offline || [transmit_mode isEqualToString: @"rf"]) {
+            text = @"RF positions from audio input will be shown. Use 'Generate' tab for offline AFSK transmission.";
+        } else {
+            text = @"Click 'Connected' if you have entered Callsign and APRS Passcode";
+        }
     }
 
     NSMutableParagraphStyle *paragraph = [NSMutableParagraphStyle new];

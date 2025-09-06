@@ -86,8 +86,11 @@
                                              }
                                          }];
     
-    // set the default segmented
-    if ([[[NSUserDefaults standardUserDefaults] objectForKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE] isEqualToString: @"rf"]) {
+    // set the default segmented based on offline mode preference
+    BOOL prefer_offline = [[NSUserDefaults standardUserDefaults] boolForKey: NSUSERDEFAULTS_PREFER_OFFLINE_MODE];
+    NSString *transmit_mode = [[NSUserDefaults standardUserDefaults] objectForKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
+    
+    if (prefer_offline || [transmit_mode isEqualToString: @"rf"]) {
         self.modeSegmentedControl.selectedSegmentIndex = 0;
     } else {
         self.modeSegmentedControl.selectedSegmentIndex = 1;
@@ -573,10 +576,10 @@
             if ( (callsign != nil)  && ( passcode != nil )) {
                 LoggerApp(0, @"tcpip packet is: %@", result);
                 
-                // Send the TCP/IP packet via notification?
+                // Send the TCP/IP packet via notification with packet type info
                 [[NSNotificationCenter defaultCenter] postNotificationName: NOTIFICATION_APRS_TCPIP_USER_POSITION
                                                                     object: nil
-                                                                  userInfo: @{ @"aprsmessage" : result }];
+                                                                  userInfo: @{ @"aprsmessage" : result, @"packet_type" : @"tcpip" }];
             } else {
                 // Bump user to setup screen
                 // Don't enqueue if socket is not connected, too!
@@ -655,7 +658,7 @@
                                    callback:nil];
 
     } else {
-        [defaults setObject: @"network" forKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
+        [defaults setObject: @"tcpip" forKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
         
         [RMessage showNotificationWithTitle: @"Transmit mode changed"
                                    subtitle: @"APRS message will be sent via the APRS-IS TCP/IP network."
