@@ -86,8 +86,11 @@
                                              }
                                          }];
     
-    // set the default segmented
-    if ([[[NSUserDefaults standardUserDefaults] objectForKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE] isEqualToString: @"rf"]) {
+    // set the default segmented based on offline mode preference
+    BOOL prefer_offline = [[NSUserDefaults standardUserDefaults] boolForKey: NSUSERDEFAULTS_PREFER_OFFLINE_MODE];
+    NSString *transmit_mode = [[NSUserDefaults standardUserDefaults] objectForKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
+    
+    if (prefer_offline || [transmit_mode isEqualToString: @"rf"]) {
         self.modeSegmentedControl.selectedSegmentIndex = 0;
     } else {
         self.modeSegmentedControl.selectedSegmentIndex = 1;

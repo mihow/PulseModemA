@@ -92,6 +92,18 @@
         }
     }
     
+    UITableViewCell *cell5 = [self.tableView cellForRowAtIndexPath:  [NSIndexPath indexPathForRow: 2 inSection: 2]];
+    self.offlineModeSwitch = (UISwitch *)[cell5 viewWithTag: 104];
+    self.offlineModeSwitch.tag = 1005;
+    
+    if (self.offlineModeSwitch != nil) {
+        if ([defaults boolForKey: NSUSERDEFAULTS_PREFER_OFFLINE_MODE]) {
+            [self.offlineModeSwitch setOn: YES];
+        } else {
+            [self.offlineModeSwitch setOn: NO];
+        }
+    }
+    
     [self.callsignTextField sendActionsForControlEvents: UIControlEventEditingChanged];
     [self.passcodeTextField sendActionsForControlEvents: UIControlEventEditingChanged];
     [self.aprsHostTextField sendActionsForControlEvents: UIControlEventEditingChanged];
@@ -102,6 +114,7 @@
     
     [self.autoConnectSwitch addTarget:self action:@selector(saveSettings:) forControlEvents: UIControlEventValueChanged];
     [self.rfreceiveSwitch addTarget:self action:@selector(saveSettings:) forControlEvents: UIControlEventValueChanged];
+    [self.offlineModeSwitch addTarget:self action:@selector(saveSettings:) forControlEvents: UIControlEventValueChanged];
 
 //    [self.aprsHostTextField addTarget:self action:@selector(saveSettings:) forControlEvents: UIControlEventEditingChanged];
 //    [self.aprsHostTextField addTarget:self action:@selector(saveSettings:) forControlEvents: UIControlEventEditingChanged];
@@ -149,7 +162,7 @@
             [defaults setObject: self.aprsHostTextField.text forKey: NSUSERDEFAULTS_APRS_HOST];
             [defaults synchronize];
         }
-    } else if (( [sender tag] == 1003) || ( [sender tag] == 1004)) {
+    } else if (( [sender tag] == 1003) || ( [sender tag] == 1004) || ( [sender tag] == 1005)) {
         LoggerApp( 1, @"SettingsTableViewController> saveSettings: Save settings triggered: %d", [sender tag]);
         
         if ([sender tag] == 1003) {
@@ -159,6 +172,29 @@
         if ([sender tag] == 1004) {
             [defaults setBool: [sender isOn] forKey: NSUSERDEFAULTS_RF_RECEIVE_ON_ONSTART]; //setObject: @YES forKey: NSUSERDEFAULTS_RF_RECEIVE_ON_ONSTART];
             [defaults synchronize];
+        }
+        if ([sender tag] == 1005) {
+            [defaults setBool: [sender isOn] forKey: NSUSERDEFAULTS_PREFER_OFFLINE_MODE];
+            [defaults synchronize];
+            
+            // When offline mode is enabled, automatically set RF mode as default
+            if ([sender isOn]) {
+                [defaults setObject: @"rf" forKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
+                [defaults synchronize];
+                
+                [RMessage showNotificationWithTitle: @"Offline mode enabled"
+                                           subtitle: @"RF mode set as default for offline operation"
+                                               type: RMessageTypeSuccess
+                                     customTypeName:nil
+                                           callback:nil];
+            } else {
+                // When disabled, don't change the mode setting - let user choose
+                [RMessage showNotificationWithTitle: @"Offline mode disabled"
+                                           subtitle: @"You can now use both RF and network modes"
+                                               type: RMessageTypeSuccess
+                                     customTypeName:nil
+                                           callback:nil];
+            }
         }
     }
     
@@ -224,7 +260,7 @@
             return 1;
             break;
         case 2:
-            return 2;
+            return 3;
             break;
         default:
             return 1;
@@ -373,6 +409,12 @@
         if ([indexPath row] == 1) {
             UILabel *label3 = (UILabel *)[cell viewWithTag:103];
             label3.text = @"RF receive on program launch";
+            
+            UISwitch *switch1 = (UISwitch *)[cell viewWithTag:104];
+        }
+        if ([indexPath row] == 2) {
+            UILabel *label3 = (UILabel *)[cell viewWithTag:103];
+            label3.text = @"Prefer offline RF mode";
             
             UISwitch *switch1 = (UISwitch *)[cell viewWithTag:104];
         }
