@@ -573,10 +573,10 @@
             if ( (callsign != nil)  && ( passcode != nil )) {
                 LoggerApp(0, @"tcpip packet is: %@", result);
                 
-                // Send the TCP/IP packet via notification?
+                // Send the TCP/IP packet via notification with packet type info
                 [[NSNotificationCenter defaultCenter] postNotificationName: NOTIFICATION_APRS_TCPIP_USER_POSITION
                                                                     object: nil
-                                                                  userInfo: @{ @"aprsmessage" : result }];
+                                                                  userInfo: @{ @"aprsmessage" : result, @"packet_type" : @"tcpip" }];
             } else {
                 // Bump user to setup screen
                 // Don't enqueue if socket is not connected, too!
@@ -655,7 +655,7 @@
                                    callback:nil];
 
     } else {
-        [defaults setObject: @"network" forKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
+        [defaults setObject: @"tcpip" forKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
         
         [RMessage showNotificationWithTitle: @"Transmit mode changed"
                                    subtitle: @"APRS message will be sent via the APRS-IS TCP/IP network."

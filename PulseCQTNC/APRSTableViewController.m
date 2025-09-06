@@ -54,10 +54,16 @@
     
     [self.position_manager addObserver:self forKeyPath:@"connected" options:NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld context:NULL];
     
-    // trigger connect if there's need to autostart
+    // trigger connect if there's need to autostart and we're in network mode
     
     if ([[NSUserDefaults standardUserDefaults] boolForKey: NSUSERDEFAULTS_APRSIS_AUTOCONNECT]) {
-        [self connectAction: nil];
+        // Only auto-connect if we're not in RF-only mode
+        NSString *transmit_mode = [[NSUserDefaults standardUserDefaults] objectForKey: NSUSERDEFAULTS_TRANSMIT_APRS_MODE];
+        if (![transmit_mode isEqualToString: @"rf"]) {
+            [self connectAction: nil];
+        } else {
+            LoggerApp(0, @"APRSTableViewController> Auto-connect skipped: RF mode enabled");
+        }
     }
 }
 
